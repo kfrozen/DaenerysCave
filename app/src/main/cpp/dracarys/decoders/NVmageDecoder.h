@@ -25,7 +25,9 @@ typedef struct {
 typedef struct {
     enum INPUT_IMAGE_TYPE type;
     int64_t videoTrimStartMs;
-    int64_t videoTrimEndMs;
+    int64_t videoTrimDurationMs;
+    int screenWidth;
+    int screenHeight;
 } ExtraInfo;
 
 typedef struct {
@@ -34,7 +36,7 @@ typedef struct {
     void* meta;
 //    void* bundle; //Currently only for gif decoding
     int metaSize; //Only for static pictures like png or jpeg
-    ExtraInfo* extraInfo;
+    ExtraInfo extraInfo;
     // decoded data
     int width;
     int height;
@@ -47,7 +49,7 @@ typedef struct {
     int error;
 } NVImageRawData;
 
-void initInput(char *filePath, NVImageRawData *imageRawData, int screenWidth, int screenHeight);
+void initInput(char *filePath, NVImageRawData *imageRawData);
 
 void decodeRawImageData(NVImageRawData* data, float segmentTimeSec, int screenWidth, int screenHeight);
 

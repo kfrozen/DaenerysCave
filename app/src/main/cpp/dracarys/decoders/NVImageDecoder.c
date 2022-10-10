@@ -13,8 +13,10 @@
 #include <decoders/webp/webp.h>
 #include <errno.h>
 
-void initInput(char *filePath, NVImageRawData *imageRawData, int screenWidth, int screenHeight) {
+void initInput(char *filePath, NVImageRawData *imageRawData) {
     int inputType = imageRawData->extraInfo->type;
+    int screenWidth = imageRawData->extraInfo->screenWidth;
+    int screenHeight = imageRawData->extraInfo->screenHeight;
     if (inputType == PNG) {
         FILE *pngFile = fopen(filePath, "rb");
         if (pngFile == NULL) {
@@ -156,7 +158,7 @@ void decodeRawImageData(NVImageRawData *data, float segmentTimeSec, int screenWi
         if (data->meta != NULL) {
             int result = getVideoFrameAt(data->meta, (int64_t) (segmentTimeSec * 1000),
                                          data->extraInfo->videoTrimStartMs,
-                                         data->extraInfo->videoTrimEndMs,
+                                         data->extraInfo->videoTrimStartMs +data->extraInfo->videoTrimDurationMs,
                                          screenWidth, screenHeight, data->data);
             if (result > 0) {
                 data->error = 0;

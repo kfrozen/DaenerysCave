@@ -17,9 +17,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/libs/${ANDROID_ABI})
 
 file(GLOB_RECURSE ffmpeg_src LIST_DIRECTORIES true "src/main/cpp/ffmpeg/*.c")
 file(GLOB_RECURSE dracarys_srcs_jni LIST_DIRECTORIES true "src/main/cpp/dracarys/*.cpp")
+file(GLOB_RECURSE dracarys_srcs_render LIST_DIRECTORIES true "src/main/cpp/dracarys/render/*.cpp")
 file(GLOB_RECURSE dracarys_srcs_decoder LIST_DIRECTORIES true "src/main/cpp/dracarys/decoders/*.c")
 file(GLOB_RECURSE libyuv_srcs LIST_DIRECTORIES true "src/main/cpp/libyuv/common/*.cc")
-SET(dracarys_srcs ${dracarys_srcs_jni} ${dracarys_srcs_decoder})
+SET(dracarys_srcs ${dracarys_srcs_jni} ${dracarys_srcs_render} ${dracarys_srcs_decoder})
 
 if((${ANDROID_ABI} STREQUAL "armeabi") OR (${ANDROID_ABI} STREQUAL "armeabi-v7a"))
     list(APPEND dracarys_srcs src/main/cpp/dracarys/decoders/gif/memset.arm.S)
@@ -152,6 +153,8 @@ set_target_properties(
 
 include_directories(src/main/cpp)
 include_directories(src/main/cpp/dracarys)
+include_directories(src/main/cpp/dracarys/decoders)
+include_directories(src/main/cpp/dracarys/render)
 include_directories(src/main/cpp/ffmpeg)
 include_directories(src/main/cpp/include)
 include_directories(src/main/cpp/libyuv)
