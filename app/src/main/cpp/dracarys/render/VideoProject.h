@@ -11,41 +11,47 @@ extern "C++" {
 
 #include <stdlib.h>
 #include <string>
+#include <list>
+#include <ctime>
 #include "CommonTools.h"
 #include "../decoders/NVmageDecoder.h"
 
 using namespace std;
 
-class VideoProject {
-
-};
-
-class Track {
-
+enum TRACK_TYPE {
+    NORMAL_TRACK = 0, MAIN_TRACK = 1, LIVE_TRACK = 2
 };
 
 class Clip {
     public:
-    Clip(string id, bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+    Clip(long id, bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+        LOGI("Clip %ld constructor invoked", id);
         this->id = id;
         this->isGap = isGap;
         this->mediaExtraInfo = mediaExtraInfo;
         if (!isGap) {
-            mediaRawData = (NVImageRawData *) malloc(sizeof(NVImageRawData));
-            mediaRawData->filePath = mediaPath;
-            mediaRawData->dataDecoded = 0;
-            mediaRawData->data = NULL;
-            mediaRawData->meta = NULL;
-            mediaRawData->decodedStaticImageData = NULL;
-            mediaRawData->extraInfo = mediaExtraInfo;
+            this->mediaRawData = (NVImageRawData *) malloc(sizeof(NVImageRawData));
+            this->mediaRawData->filePath = mediaPath;
+            this->mediaRawData->dataDecoded = 0;
+            this->mediaRawData->data = NULL;
+            this->mediaRawData->meta = NULL;
+            this->mediaRawData->decodedStaticImageData = NULL;
+            this->mediaRawData->extraInfo = mediaExtraInfo;
+            this->mediaRawData->release = releaseRawImageData;
         }
-        clipRange = new Range(mediaExtraInfo.videoTrimStartMs, mediaExtraInfo.videoTrimDurationMs);
+        this->clipRange = new Range(mediaExtraInfo.videoTrimStartMs, mediaExtraInfo.videoTrimDurationMs);
     };
 
     ~Clip() {
+        LOGI("Clip %ld destructor invoked", id);
         if (mediaRawData) {
+            mediaRawData->release(mediaRawData);
             free(mediaRawData);
             mediaRawData = NULL;
+        }
+        if (clipRange) {
+            delete clipRange;
+            clipRange = NULL;
         }
         if (displayRange) {
             delete displayRange;
@@ -53,21 +59,30 @@ class Clip {
         }
     }
 
+    //setter
+    void setExternalId(string extId) {
+        this->externalId = extId;
+    }
+
     //getter
-    string getId() {
+    long getId() {
         return id;
+    }
+
+    string getExternalId() {
+        return externalId;
     }
 
     bool isGapClip() {
         return isGap;
     }
 
-    Range* getClipRange() {
-        return clipRange;
+    Range getClipRange() {
+        return *clipRange;
     }
 
-    Range* getDisplayRange() {
-        return displayRange;
+    Range getDisplayRange() {
+        return *displayRange;
     }
 
     //apis
@@ -89,11 +104,118 @@ class Clip {
 
     private:
     bool isGap;
-    string id;
+    long id;
+    string externalId;
     NVImageRawData *mediaRawData;
     ExtraInfo mediaExtraInfo;
     Range *clipRange;
     Range *displayRange;
+};
+
+class Track {
+    public:
+    Track(long id, enum TRACK_TYPE trackType) {
+        LOGI("Track %ld constructor invoked", id);
+        this->id = id;
+        this->trackType = trackType;
+    }
+
+    ~Track() {
+        LOGI("Track %ld destructor invoked", id);
+        if (!clipList.empty()) {
+            clipList.clear();
+        }
+    }
+
+    //getter
+    long getId() {
+        return  this->id;
+    }
+
+    TRACK_TYPE getTrackType() {
+        return this->trackType;
+    }
+
+    //apis
+    Clip* appendClip(bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+        return insertClip(clipList.size(), isGap, mediaPath, mediaExtraInfo);
+    }
+
+    Clip* insertClip(int index, bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+        if (index < 0 || index > getClipSize()) {
+            LOGE("insertClip: invalid index %d", index);
+            return NULL;
+        }
+        if (this->trackType == LIVE_TRACK && (isGap || mediaExtraInfo.type != LIVE)) {
+            LOGE("insertClip: Clip with path %s is not LIVE clip, and cannot fit into a LIVE track", mediaPath);
+            return NULL;
+        }
+        long clipId = time(0);
+        Clip* clip = new Clip(clipId, isGap, mediaPath, mediaExtraInfo);
+        clipList.insert(getIteratorByIndex(index), clip);
+        refreshClipRange();
+        return clip;
+    }
+
+    long getTrackDurationMs() {
+        if (clipList.empty()) {
+            return 0L;
+        }
+        long duration = 0L;
+        for(list<Clip*>::iterator it = clipList.begin(); it != clipList.end(); it++){
+            duration += (*it)->getDisplayRange().duration;
+        }
+    }
+
+    int getClipSize() {
+        return clipList.size();
+    }
+
+    Clip* getClipByIndex(int index) {
+        if (index < 0 || index >= getClipSize()) {
+            return NULL;
+        }
+        return *getIteratorByIndex(index);
+    }
+
+    void removeClipByIndex(int index) {
+        if (index < 0 || index >= getClipSize()) {
+            return;
+        }
+        clipList.erase(getIteratorByIndex(index));
+    }
+
+    private:
+    long id;
+    enum TRACK_TYPE trackType;
+    list<Clip*> clipList;
+
+    list<Clip*>::iterator getIteratorByIndex(int index) {
+        list<Clip*>::iterator it = clipList.begin();
+        if (index < 0 || index >= getClipSize()) {
+            return it;
+        }
+        for(int i=0; i<index; i++){
+            ++it;
+        }
+        return it;
+    }
+
+    void refreshClipRange() {
+        if (clipList.empty()) {
+            return;
+        }
+        long accumulatedStartMs = 0L;
+        for(list<Clip*>::iterator it = clipList.begin(); it != clipList.end(); it++){
+            Clip* clip = *it;
+            clip->updateDisplayRange(accumulatedStartMs);
+            accumulatedStartMs += clip->getClipRange().duration;
+        }
+    }
+};
+
+class VideoProject {
+
 };
 
 #ifdef __cplusplus

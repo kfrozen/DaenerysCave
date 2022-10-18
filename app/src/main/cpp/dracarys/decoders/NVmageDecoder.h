@@ -10,7 +10,7 @@
 typedef uint8_t byte;
 
 enum INPUT_IMAGE_TYPE {
-    UNKNOWN = -1, PNG = 0, JPEG = 1, GIF = 2, VIDEO = 3, WEBP = 4,
+    UNKNOWN = -1, PNG = 0, JPEG = 1, GIF = 2, VIDEO = 3, WEBP = 4, LIVE = 5,
 };
 
 typedef struct {
@@ -45,15 +45,15 @@ typedef struct {
     void* data;
     void* decodedStaticImageData; //Only for static pictures like png or jpeg
     int dataDecoded; //Only for static pictures like png or jpeg
-
     int error;
+    void (*release)(void *self);
 } NVImageRawData;
 
 void initInput(char *filePath, NVImageRawData *imageRawData);
 
 void decodeRawImageData(NVImageRawData* data, float segmentTimeSec, int screenWidth, int screenHeight);
 
-void releaseRawImageData(NVImageRawData* data);
+void releaseRawImageData(void* self);
 
 #endif //LIBPNG_FOR_ANDROID_NVIMAGE_H
 
