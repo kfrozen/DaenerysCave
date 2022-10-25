@@ -14,7 +14,7 @@ extern "C++" {
 #include <list>
 #include <ctime>
 #include "CommonTools.h"
-#include "../decoders/NVmageDecoder.h"
+#include "NVmageDecoder.h"
 
 using namespace std;
 
@@ -37,7 +37,7 @@ class Clip {
             this->mediaRawData->meta = NULL;
             this->mediaRawData->decodedStaticImageData = NULL;
             this->mediaRawData->extraInfo = mediaExtraInfo;
-            this->mediaRawData->release = releaseRawImageData;
+            //this->mediaRawData->release = releaseRawImageData;
         }
         this->clipRange = new Range(mediaExtraInfo->videoTrimStartMs, mediaExtraInfo->videoTrimDurationMs);
     };
@@ -45,7 +45,8 @@ class Clip {
     ~Clip() {
         LOGI("Clip %ld destructor invoked", id);
         if (mediaRawData) {
-            mediaRawData->release(mediaRawData);
+            releaseRawImageData(mediaRawData);
+            //mediaRawData->release(mediaRawData);
             free(mediaRawData);
             mediaRawData = NULL;
         }

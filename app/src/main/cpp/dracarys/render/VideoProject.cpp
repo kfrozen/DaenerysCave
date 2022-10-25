@@ -2,7 +2,12 @@
 // Created by tanghaomeng on 2022/10/25.
 //
 
+#ifdef __cplusplus
+extern "C++" {
+#endif /* __cplusplus */
+
 #include "VideoProject.h"
+#include "../decoders/NVmageDecoder.h"
 
 long VideoProject::addClip(char *mediaPath, long startPts, ExtraInfo* mediaExtraInfo) {
     LOGI("VideoProject::addClip invoked with media path = %s, start pts = %ld", mediaPath, startPts);
@@ -22,9 +27,9 @@ long VideoProject::addClip(char *mediaPath, long startPts, ExtraInfo* mediaExtra
 long VideoProject::appendClipToMainTrack(char *mediaPath, ExtraInfo* mediaExtraInfo) {
     LOGI("VideoProject::appendClipToMainTrack invoked with media path = %s", mediaPath);
     bool hasMainTrack = false;
-    list<Track*>::iterator it = trackList.begin();
-    for(int i=0; i<trackList.size(); i++){
-        Track* track = *it;
+    list<Track *>::iterator it = trackList.begin();
+    for (int i = 0; i < trackList.size(); i++) {
+        Track *track = *it;
         if (track->getTrackType() == MAIN_TRACK) {
             hasMainTrack = true;
             break;
@@ -33,13 +38,17 @@ long VideoProject::appendClipToMainTrack(char *mediaPath, ExtraInfo* mediaExtraI
     }
     if (!hasMainTrack) {
         long trackId = time(0);
-        auto* mainTrack = new Track(trackId, MAIN_TRACK);
-        Clip* clip = mainTrack->appendClip(false, mediaPath, mediaExtraInfo);
+        auto *mainTrack = new Track(trackId, MAIN_TRACK);
+        Clip *clip = mainTrack->appendClip(false, mediaPath, mediaExtraInfo);
         trackList.insert(trackList.begin(), mainTrack);
         return clip->getId();
     } else {
-        auto* mainTrack = *it;
-        Clip* clip = mainTrack->appendClip(false, mediaPath, mediaExtraInfo);
+        auto *mainTrack = *it;
+        Clip *clip = mainTrack->appendClip(false, mediaPath, mediaExtraInfo);
         return clip->getId();
     }
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */

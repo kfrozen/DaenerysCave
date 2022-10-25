@@ -1,7 +1,7 @@
 //
 // Created by tanghaomeng on 2022/10/4.
 //
-
+#include <android/log.h>
 #ifndef DAENERYSCAVE_COMMONTOOLS_H
 #define DAENERYSCAVE_COMMONTOOLS_H
 

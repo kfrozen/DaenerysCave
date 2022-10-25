@@ -5,6 +5,10 @@
 #ifndef LIBPNG_FOR_ANDROID_NVIMAGE_H
 #define LIBPNG_FOR_ANDROID_NVIMAGE_H
 
+#ifdef __cplusplus
+extern "C++" {
+#endif /* __cplusplus */
+
 #include <GLES2/gl2.h>
 
 typedef uint8_t byte;
@@ -53,7 +57,11 @@ void initInput(char *filePath, NVImageRawData *imageRawData);
 
 void decodeRawImageData(NVImageRawData* data, float segmentTimeSec, int screenWidth, int screenHeight);
 
-void releaseRawImageData(void* self);
+void releaseRawImageData(void *self);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif //LIBPNG_FOR_ANDROID_NVIMAGE_H
 
