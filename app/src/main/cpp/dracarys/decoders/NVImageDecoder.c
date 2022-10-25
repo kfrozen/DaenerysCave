@@ -14,9 +14,9 @@
 #include <errno.h>
 
 void initInput(char *filePath, NVImageRawData *imageRawData) {
-    int inputType = imageRawData->extraInfo.type;
-    int screenWidth = imageRawData->extraInfo.screenWidth;
-    int screenHeight = imageRawData->extraInfo.screenHeight;
+    int inputType = imageRawData->extraInfo->type;
+    int screenWidth = imageRawData->extraInfo->screenWidth;
+    int screenHeight = imageRawData->extraInfo->screenHeight;
     if (inputType == PNG) {
         FILE *pngFile = fopen(filePath, "rb");
         if (pngFile == NULL) {
@@ -95,7 +95,7 @@ void decodeRawImageData(NVImageRawData *data, float segmentTimeSec, int screenWi
     if (data->error == 1) {
         return;
     }
-    int inputType = data->extraInfo.type;
+    int inputType = data->extraInfo->type;
     if (inputType == PNG) {
         if (data->dataDecoded == 0) {
             DecodedRawFrameData rawData;
@@ -157,8 +157,8 @@ void decodeRawImageData(NVImageRawData *data, float segmentTimeSec, int screenWi
     } else if (inputType == VIDEO) {
         if (data->meta != NULL) {
             int result = getVideoFrameAt(data->meta, (int64_t) (segmentTimeSec * 1000),
-                                         data->extraInfo.videoTrimStartMs,
-                                         data->extraInfo.videoTrimStartMs +data->extraInfo.videoTrimDurationMs,
+                                         data->extraInfo->videoTrimStartMs,
+                                         data->extraInfo->videoTrimStartMs +data->extraInfo->videoTrimDurationMs,
                                          screenWidth, screenHeight, data->data);
             if (result > 0) {
                 data->error = 0;
@@ -189,7 +189,7 @@ void releaseRawImageData(void *self) {
             free(data->data);
             data->data = NULL;
         }
-        int inputType = data->extraInfo.type;
+        int inputType = data->extraInfo->type;
         if (data->meta) {
             if (inputType == GIF) {
                 cleanUp(data->meta);
@@ -208,5 +208,6 @@ void releaseRawImageData(void *self) {
             free(data->decodedStaticImageData);
             data->decodedStaticImageData = NULL;
         }
+        data->extraInfo = NULL;
     }
 }

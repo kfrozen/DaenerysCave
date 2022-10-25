@@ -10,7 +10,7 @@
 typedef uint8_t byte;
 
 enum INPUT_IMAGE_TYPE {
-    UNKNOWN = -1, PNG = 0, JPEG = 1, GIF = 2, VIDEO = 3, WEBP = 4, LIVE = 5,
+    GAP = -2, UNKNOWN = -1, PNG = 0, JPEG = 1, GIF = 2, VIDEO = 3, WEBP = 4, LIVE = 5,
 };
 
 typedef struct {
@@ -36,7 +36,7 @@ typedef struct {
     void* meta;
 //    void* bundle; //Currently only for gif decoding
     int metaSize; //Only for static pictures like png or jpeg
-    ExtraInfo extraInfo;
+    ExtraInfo* extraInfo;
     // decoded data
     int width;
     int height;

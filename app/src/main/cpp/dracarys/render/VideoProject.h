@@ -24,7 +24,7 @@ enum TRACK_TYPE {
 
 class Clip {
     public:
-    Clip(long id, bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+    Clip(long id, bool isGap, char *mediaPath, ExtraInfo* mediaExtraInfo) {
         LOGI("Clip %ld constructor invoked", id);
         this->id = id;
         this->isGap = isGap;
@@ -39,7 +39,7 @@ class Clip {
             this->mediaRawData->extraInfo = mediaExtraInfo;
             this->mediaRawData->release = releaseRawImageData;
         }
-        this->clipRange = new Range(mediaExtraInfo.videoTrimStartMs, mediaExtraInfo.videoTrimDurationMs);
+        this->clipRange = new Range(mediaExtraInfo->videoTrimStartMs, mediaExtraInfo->videoTrimDurationMs);
     };
 
     ~Clip() {
@@ -56,6 +56,12 @@ class Clip {
         if (displayRange) {
             delete displayRange;
             displayRange = NULL;
+        }
+        if (mediaExtraInfo) {
+            if (isGap) {
+                free(mediaExtraInfo);
+            }
+            this->mediaExtraInfo = NULL;
         }
     }
 
@@ -95,11 +101,11 @@ class Clip {
 
     void updateDisplayRange(long startInMs) {
         if (!displayRange) {
-            displayRange = new Range(startInMs, mediaExtraInfo.videoTrimDurationMs);
+            displayRange = new Range(startInMs, mediaExtraInfo->videoTrimDurationMs);
             return;
         }
         displayRange->start = startInMs;
-        displayRange->duration = mediaExtraInfo.videoTrimDurationMs;
+        displayRange->duration = mediaExtraInfo->videoTrimDurationMs;
     }
 
     private:
@@ -107,7 +113,7 @@ class Clip {
     long id;
     string externalId;
     NVImageRawData *mediaRawData;
-    ExtraInfo mediaExtraInfo;
+    ExtraInfo* mediaExtraInfo;
     Range *clipRange;
     Range *displayRange;
 };
@@ -137,16 +143,16 @@ class Track {
     }
 
     //apis
-    Clip* appendClip(bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+    Clip* appendClip(bool isGap, char *mediaPath, ExtraInfo* mediaExtraInfo) {
         return insertClip(clipList.size(), isGap, mediaPath, mediaExtraInfo);
     }
 
-    Clip* insertClip(int index, bool isGap, char *mediaPath, ExtraInfo mediaExtraInfo) {
+    Clip* insertClip(int index, bool isGap, char *mediaPath, ExtraInfo* mediaExtraInfo) {
         if (index < 0 || index > getClipSize()) {
             LOGE("insertClip: invalid index %d", index);
             return NULL;
         }
-        if (this->trackType == LIVE_TRACK && (isGap || mediaExtraInfo.type != LIVE)) {
+        if (this->trackType == LIVE_TRACK && (isGap || mediaExtraInfo->type != LIVE)) {
             LOGE("insertClip: Clip with path %s is not LIVE clip, and cannot fit into a LIVE track", mediaPath);
             return NULL;
         }
@@ -183,6 +189,7 @@ class Track {
             return;
         }
         clipList.erase(getIteratorByIndex(index));
+        refreshClipRange();
     }
 
     private:
@@ -215,6 +222,39 @@ class Track {
 };
 
 class VideoProject {
+    public:
+    VideoProject() {
+        LOGI("VideoProject constructor invoked");
+
+    }
+
+    ~VideoProject() {
+        LOGI("VideoProject destructor invoked");
+        if (!trackList.empty()) {
+            trackList.clear();
+        }
+    }
+
+    /**
+     * Add a new media clip to this project. This clip will be in a standalone track.
+     * @param mediaPath absolute local path for media
+     * @param startPts the start pts for this clip in the whole project
+     * @param mediaExtraInfo
+     * @return the id of the created clip
+     * */
+    long addClip(char *mediaPath, long startPts, ExtraInfo* mediaExtraInfo);
+
+    /**
+     * Append a new media clip to the tail of current main track, a new track will be created
+     * if the main track absent.
+     * @param mediaPath absolute local path for media
+     * @param mediaExtraInfo
+     * @return the id of the created clip
+     * */
+    long appendClipToMainTrack(char *mediaPath, ExtraInfo* mediaExtraInfo);
+
+    private:
+    list<Track*> trackList;
 
 };
 
